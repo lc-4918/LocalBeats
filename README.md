@@ -1,4 +1,4 @@
-# LocalBeats — Offline Local Music Player for Android
+# LocalBeats
 
 ![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android\&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.0-7F52FF?logo=kotlin\&logoColor=white)
