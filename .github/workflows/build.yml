@@ -1,0 +1,63 @@
+name: Build APK
+
+# Ce workflow compile l'application dans le cloud (gratuit) et produit
+# un fichier APK téléchargeable, sans aucun outil installé sur votre PC.
+#
+# Il se lance automatiquement à chaque "push", et peut aussi être lancé
+# manuellement depuis l'onglet "Actions" de votre dépôt GitHub
+# (bouton "Run workflow").
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: {}   # permet le lancement manuel
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Java 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Préparer Gradle (cache)
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Rendre gradlew exécutable
+        run: chmod +x ./gradlew
+
+      - name: Compiler l'APK de debug
+        run: ./gradlew assembleDebug --stacktrace
+
+      # APK de debug : installable immédiatement sur le téléphone.
+      - name: Publier l'APK de debug
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      # (Optionnel) APK de release NON signé. Il faut le signer avant
+      # de pouvoir l'installer ; l'APK de debug ci-dessus suffit pour un
+      # usage personnel.
+      - name: Compiler l'APK de release (non signé)
+        run: ./gradlew assembleRelease --stacktrace
+        continue-on-error: true
+
+      - name: Publier l'APK de release (non signé)
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-unsigned-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: warn
