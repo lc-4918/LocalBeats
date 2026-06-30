@@ -6,12 +6,6 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
 }
-val keystoreProperties = Properties()
-val keystorePropertiesFile = rootProject.file("keystore.properties")
-
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(keystorePropertiesFile.inputStream())
-}
 
 android {
     namespace = "com.cll.localmusic"
@@ -28,16 +22,15 @@ android {
 
     signingConfigs {
         create("release") {
-            if (keystorePropertiesFile.exists()) {
-                val storeFilePath = keystoreProperties["storeFile"] as String?
+            val keystorePath = System.getenv("KEYSTORE_PATH")
 
-                if (storeFilePath != null) {
-                    storeFile = file(storeFilePath)
-                    storePassword = keystoreProperties["storePassword"] as String
-                    keyAlias = keystoreProperties["keyAlias"] as String
-                    keyPassword = keystoreProperties["keyPassword"] as String
-                }
+            require(!keystorePath.isNullOrEmpty()) {
+                "KEYSTORE_PATH is missing"
             }
+            storeFile = file(keystorePath)
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
         }
     }
 

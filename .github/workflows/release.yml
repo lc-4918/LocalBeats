@@ -2,8 +2,7 @@ name: Android Release CD
 
 on:
   push:
-    tags:
-      - "v*"
+    branches: [ master ]
   workflow_dispatch: {}
 
 permissions:
@@ -13,34 +12,75 @@ jobs:
   release:
     runs-on: ubuntu-latest
 
-    env:
-      VERSION_CODE: ${{ github.run_number }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 🧠 Version depuis tag
-      - name: Compute version
+      # Semantic Versioning Auto Bump (Conventional Commits)
+      - name: Compute semantic version
+        id: version
         run: |
-          TAG=${GITHUB_REF_NAME}
-          VERSION_NAME="${TAG#v}"
+          PREV_TAG=$(git tag --sort=-v:refname | sed -n 1p)
+          
+          if [ -z "$PREV_TAG" ]; then
+            PREV_TAG="v0.0.0"
+          fi
+          
+          COMMITS=$(git log ${PREV_TAG}..HEAD --pretty=format:"%s")
+          
+          MAJOR=0
+          MINOR=0
+          PATCH=0
+          
+          while IFS= read -r line; do
+            if [[ "$line" == *"BREAKING CHANGE"* || "$line" == feat!* ]]; then
+              MAJOR=1
+            elif [[ "$line" == feat:* ]]; then
+              MINOR=1
+            elif [[ "$line" == fix:* ]]; then
+              PATCH=1
+            fi
+          done <<< "$COMMITS"
+          
+          VERSION=$(echo ${PREV_TAG#v} | awk -F. -v M=$MAJOR -v m=$MINOR -v p=$PATCH '
+            { 
+              major=$1; minor=$2; patch=$3;
+          
+              if (M==1) { major++; minor=0; patch=0 }
+              else if (m==1) { minor++; patch=0 }
+              else if (p==1) { patch++ }
+          
+              print major"."minor"."patch
+            }
+          ')
+          
+          echo "VERSION_NAME=$VERSION" >> $GITHUB_ENV
 
-          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
-          echo "TAG=$TAG" >> $GITHUB_ENV
+      # VERSION CODE stable
+      - name: Compute version code
+        run: |
+          VERSION_CODE=$(git rev-list --count HEAD)
+          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
 
-      # 📝 Changelog automatique
+      # Changelog automatique
       - name: Generate changelog
         run: |
-          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-
+          PREV_TAG=$(git tag --sort=-v:refname | sed -n 2p)
+          
           if [ -z "$PREV_TAG" ]; then
             echo "CHANGELOG=Initial release" >> $GITHUB_ENV
           else
             echo "CHANGELOG<<EOF" >> $GITHUB_ENV
-            git log $PREV_TAG..HEAD --pretty=format:"- %s"
+          
+            echo "New Features" >> $GITHUB_ENV
+            git log $PREV_TAG..HEAD --pretty=format:"%s" | grep "feat:" >> $GITHUB_ENV || true
+          
+            echo "" >> $GITHUB_ENV
+            echo "Bug Fixes" >> $GITHUB_ENV
+            git log $PREV_TAG..HEAD --pretty=format:"%s" | grep "fix:" >> $GITHUB_ENV || true
+          
             echo "" >> $GITHUB_ENV
             echo "EOF" >> $GITHUB_ENV
           fi
@@ -54,56 +94,81 @@ jobs:
       - name: Setup Gradle cache
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Enable Gradle performance flags
+        run: |
+          mkdir -p ~/.gradle
+          cat >> ~/.gradle/gradle.properties <<EOF
+          org.gradle.parallel=true
+          org.gradle.configuration-cache=true
+          org.gradle.caching=true
+          org.gradle.jvmargs=-Xmx4g -Dfile.encoding=UTF-8
+          EOF
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      # 🔐 Keystore
+      # Keys (100% secrets-only)
       - name: Decode keystore
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 --decode > release.jks
+          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 --decode > $RUNNER_TEMP/release.jks
 
-      - name: Create keystore.properties
+      - name: Export keystore env
         run: |
-          cat > keystore.properties <<EOF
-          storeFile=release.jks
-          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
-          keyAlias=${{ secrets.KEY_ALIAS }}
-          keyPassword=${{ secrets.KEY_PASSWORD }}
-          EOF
+          echo "KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> $GITHUB_ENV
+          echo "KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
+          echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> $GITHUB_ENV
+          echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> $GITHUB_ENV
 
-      # 🚀 Build release optimisé
-      - name: Build Release APK & AAB
+      # Build release
+      - name: Build Release APK
         run: |
-          ./gradlew clean
-          ./gradlew assembleRelease bundleRelease
+          ./gradlew assembleRelease bundleRelease \
+            --stacktrace \
+            --build-cache \
+            --parallel \
+            --configuration-cache
 
-      # 📦 APK
+      # APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
           path: app/build/outputs/apk/release/*.apk
 
-      # 📦 AAB
+      # AAB
       - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
           name: release-aab
           path: app/build/outputs/bundle/release/*.aab
 
-      # 🎉 GitHub Release
-      - name: Create Release
+      # GitHub Release
+      - name: GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: "Release ${{ env.VERSION_NAME }}"
-          tag_name: ${{ github.ref_name }}
+          tag_name: "v${{ env.VERSION_NAME }}"
           body: |
-            ## 🚀 Version ${{ env.VERSION_NAME }}
+            ## Version ${{ env.VERSION_NAME }}
 
-            ### 📝 Changelog
+            ### Changelog
             ${{ env.CHANGELOG }}
+            
+            ### Build info
+            - Build number: ${{ env.VERSION_CODE }}
+            - Commit: ${{ github.sha }}
 
-            ### 📦 Build
+            ### Artefacts
             - APK (installable)
             - AAB (Play Store)
         env:
