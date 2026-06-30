@@ -1,4 +1,4 @@
-package com.example.localmusic.ui
+package com.cll.localmusic.ui
 
 import android.content.Intent
 import android.net.Uri
@@ -54,8 +54,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.localmusic.data.AppSettings
-import com.example.localmusic.toTrack
+import com.cll.localmusic.data.AppSettings
+import com.cll.localmusic.toTrack
 import androidx.core.net.toUri
 
 @Composable

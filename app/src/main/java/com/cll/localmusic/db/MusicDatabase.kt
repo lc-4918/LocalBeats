@@ -1,4 +1,4 @@
-package com.example.localmusic.db
+package com.cll.localmusic.db
 
 import androidx.room.Dao
 import androidx.room.Database

@@ -1,4 +1,4 @@
-package com.example.localmusic.ui
+package com.cll.localmusic.ui
 
 import android.app.Application
 import android.net.Uri
@@ -7,10 +7,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.localmusic.AudioFolder
-import com.example.localmusic.MusicApp
-import com.example.localmusic.Track
-import com.example.localmusic.playback.PlaybackController
+import com.cll.localmusic.AudioFolder
+import com.cll.localmusic.MusicApp
+import com.cll.localmusic.Track
+import com.cll.localmusic.playback.PlaybackController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -118,7 +118,7 @@ class MusicViewModel(app: Application) : AndroidViewModel(app) {
     fun removeFromPlaylist(rowIds: List<Long>) = viewModelScope.launch { repo.removeFromPlaylist(rowIds) }
 
     // --- Parametres ---
-    fun setTheme(mode: com.example.localmusic.data.ThemeMode) =
+    fun setTheme(mode: com.cll.localmusic.data.ThemeMode) =
         viewModelScope.launch { settingsStore.setTheme(mode) }
     fun setShowArt(v: Boolean) = viewModelScope.launch { settingsStore.setShowArt(v) }
     fun setShowMeta(v: Boolean) = viewModelScope.launch { settingsStore.setShowMeta(v) }

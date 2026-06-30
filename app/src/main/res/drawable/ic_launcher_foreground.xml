@@ -7,7 +7,7 @@
          + crochet, centree dans la zone de securite de l'icone adaptive
          (les 72dp centraux, soit 18..90 sur les deux axes). -->
     <path
-        android:fillColor="#000000"
+        android:fillColor="#FFFFFF"
         android:pathData="
             M62,26
             L62,63.5

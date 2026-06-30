@@ -1,4 +1,4 @@
-package com.example.localmusic.ui
+package com.cll.localmusic.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -29,8 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.example.localmusic.data.AppSettings
-import com.example.localmusic.data.ThemeMode
+import com.cll.localmusic.data.AppSettings
+import com.cll.localmusic.data.ThemeMode
 
 @Composable
 fun SettingsScreen(vm: MusicViewModel, nav: NavController) {

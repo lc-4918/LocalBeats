@@ -1,4 +1,4 @@
-package com.example.localmusic.ui
+package com.cll.localmusic.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -28,9 +27,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.localmusic.Track
-import com.example.localmusic.data.AppSettings
-import com.example.localmusic.db.PlaylistWithCount
+import com.cll.localmusic.Track
+import com.cll.localmusic.data.AppSettings
+import com.cll.localmusic.db.PlaylistWithCount
 
 private fun keyOf(t: Track) = if (t.id != 0L) t.id.toString() else t.uri.toString()
 

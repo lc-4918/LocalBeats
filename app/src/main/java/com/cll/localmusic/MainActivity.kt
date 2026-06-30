@@ -1,4 +1,4 @@
-package com.example.localmusic
+package com.cll.localmusic
 
 import android.Manifest
 import android.os.Build
@@ -21,11 +21,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.localmusic.data.AppSettings
-import com.example.localmusic.data.ThemeMode
-import com.example.localmusic.ui.MusicAppRoot
-import com.example.localmusic.ui.MusicViewModel
-import com.example.localmusic.ui.theme.LocalMusicTheme
+import com.cll.localmusic.data.AppSettings
+import com.cll.localmusic.data.ThemeMode
+import com.cll.localmusic.ui.MusicAppRoot
+import com.cll.localmusic.ui.MusicViewModel
+import com.cll.localmusic.ui.theme.LocalMusicTheme
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 

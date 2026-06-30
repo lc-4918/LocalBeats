@@ -1,10 +1,10 @@
-package com.example.localmusic
+package com.cll.localmusic
 
 import android.app.Application
 import androidx.room.Room
-import com.example.localmusic.data.MediaStoreScanner
-import com.example.localmusic.data.SettingsStore
-import com.example.localmusic.db.MusicDatabase
+import com.cll.localmusic.data.MediaStoreScanner
+import com.cll.localmusic.data.SettingsStore
+import com.cll.localmusic.db.MusicDatabase
 
 /**
  * Service locator minimaliste : evite Hilt pour reduire la surface d'erreur.

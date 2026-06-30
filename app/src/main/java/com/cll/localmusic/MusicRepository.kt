@@ -1,10 +1,10 @@
-package com.example.localmusic
+package com.cll.localmusic
 
-import com.example.localmusic.data.MediaStoreScanner
-import com.example.localmusic.db.MusicDao
-import com.example.localmusic.db.PlaylistEntity
-import com.example.localmusic.db.PlaylistTrackEntity
-import com.example.localmusic.db.RecentPlayEntity
+import com.cll.localmusic.data.MediaStoreScanner
+import com.cll.localmusic.db.MusicDao
+import com.cll.localmusic.db.PlaylistEntity
+import com.cll.localmusic.db.PlaylistTrackEntity
+import com.cll.localmusic.db.RecentPlayEntity
 
 /** Convertit un Track scanne en ligne de playlist persistee. */
 fun Track.toPlaylistTrack(playlistId: Long, position: Int) = PlaylistTrackEntity(
