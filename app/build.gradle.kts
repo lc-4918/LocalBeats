@@ -20,17 +20,21 @@ android {
         vectorDrawables { useSupportLibrary = true }
     }
 
+    // On ne se base plus sur la variable "CI" (peu fiable selon le runner/daemon).
+    // On se base directement sur la présence de KEYSTORE_PATH : si elle est définie
+    // (ex: injectée par release.yml), on signe. Sinon (ex: ci.yml en assembleDebug),
+    // on ne configure rien et aucune erreur n'est levée.
+    val keystorePath = System.getenv("KEYSTORE_PATH")
+    val hasReleaseSigning = !keystorePath.isNullOrEmpty()
+
     signingConfigs {
         create("release") {
-            val keystorePath = System.getenv("KEYSTORE_PATH")
-
-            require(!keystorePath.isNullOrEmpty()) {
-                "KEYSTORE_PATH is missing"
+            if (hasReleaseSigning) {
+                storeFile = file(keystorePath!!)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
             }
-            storeFile = file(keystorePath)
-            storePassword = System.getenv("KEYSTORE_PASSWORD")
-            keyAlias = System.getenv("KEY_ALIAS")
-            keyPassword = System.getenv("KEY_PASSWORD")
         }
     }
 
@@ -38,7 +42,11 @@ android {
         release {
             isMinifyEnabled = false
 
-            signingConfig = signingConfigs.getByName("release")
+            // On n'attache la signingConfig que si elle a réellement été configurée.
+            // Sinon : null -> pas de require() qui plante un assembleDebug,
+            // et un assembleRelease sans secrets échouera plus tard avec un message
+            // Android clair plutôt qu'une exception de configuration cryptique.
+            signingConfig = if (hasReleaseSigning) signingConfigs.getByName("release") else null
 
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

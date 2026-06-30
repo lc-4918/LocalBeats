@@ -9,7 +9,35 @@ permissions:
   contents: write
 
 jobs:
+  # Job de garde : on ne déclenche la release que si au moins un commit
+  # poussé commence par "feat:" (ou si on a lancé le workflow manuellement).
+  check-feat:
+    runs-on: ubuntu-latest
+    outputs:
+      has_feat: ${{ steps.check.outputs.has_feat }}
+    steps:
+      - name: Check pushed commits for feat
+        id: check
+        env:
+          COMMITS_JSON: ${{ toJSON(github.event.commits) }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "has_feat=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          HAS_FEAT=false
+          while IFS= read -r msg; do
+            if [[ "$msg" == feat:* || "$msg" == feat\(*\):* ]]; then
+              HAS_FEAT=true
+            fi
+          done < <(echo "$COMMITS_JSON" | jq -r '.[].message')
+
+          echo "has_feat=$HAS_FEAT" >> "$GITHUB_OUTPUT"
+
   release:
+    needs: check-feat
+    if: needs.check-feat.outputs.has_feat == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -121,6 +149,13 @@ jobs:
       - name: Decode keystore
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 --decode > $RUNNER_TEMP/release.jks
+
+      - name: Verify keystore alias
+        run: |
+          keytool -list -keystore "$RUNNER_TEMP/release.jks" \
+            -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
+            -alias "${{ secrets.KEY_ALIAS }}" \
+          || (echo "::error::L'alias KEY_ALIAS est introuvable dans le keystore décodé. Vérifie les secrets ANDROID_KEYSTORE / KEY_ALIAS." && exit 1)
 
       - name: Export keystore env
         run: |
