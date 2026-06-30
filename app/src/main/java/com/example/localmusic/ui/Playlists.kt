@@ -5,9 +5,9 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,20 +21,21 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -55,6 +56,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.localmusic.data.AppSettings
 import com.example.localmusic.toTrack
+import androidx.core.net.toUri
 
 @Composable
 fun PlaylistsScreen(vm: MusicViewModel, nav: NavController) {
@@ -95,7 +97,7 @@ fun PlaylistsScreen(vm: MusicViewModel, nav: NavController) {
                     ) {
                         if (p.coverUri != null) {
                             AsyncImage(
-                                model = Uri.parse(p.coverUri),
+                                model = p.coverUri.toUri(),
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.size(52.dp).clip(RoundedCornerShape(8.dp))
@@ -205,31 +207,49 @@ fun PlaylistDetailScreen(vm: MusicViewModel, nav: NavController, playlistId: Lon
             onRemoveSelected = { sel -> vm.removeFromPlaylist(sel.map { it.id }) },
             header = {
                 Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                    if (playlist?.coverUri != null) {
-                        AsyncImage(
-                            model = Uri.parse(playlist!!.coverUri),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(12.dp))
-                        )
-                        Spacer(Modifier.height(12.dp))
-                    } else {
-                        OutlinedButton(onClick = { coverPicker.launch("image/*") }) {
-                            Icon(Icons.Default.Image, null); Text("  Ajouter une image")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (playlist?.coverUri != null) {
+                            AsyncImage(
+                                model = Uri.parse(playlist!!.coverUri),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.weight(1f).height(180.dp).clip(RoundedCornerShape(12.dp))
+                            )
+                        } else {
+                            // Pas d'image : seul le bouton "Ajouter une image" est affiche.
+                            // Une fois une image definie, ce bouton disparait ; on peut
+                            // toujours la changer via le menu des 3 points en haut.
+                            IconButton(onClick = { coverPicker.launch("image/*") }) {
+                                Icon(Icons.Default.Image, "Ajouter une image", modifier = Modifier.size(24.dp))
+                            }
                         }
-                        Spacer(Modifier.height(12.dp))
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = { if (tracks.isNotEmpty()) vm.play(tracks, 0) }) {
-                            Icon(Icons.Default.PlayArrow, null); Text(" Tout lire")
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        IconButton(onClick = { vm.playShuffled(tracks) }) {
+                            Icon(Icons.Default.Shuffle, "Lecture aleatoire", modifier = Modifier.size(24.dp))
                         }
-                        OutlinedButton(onClick = { vm.playShuffled(tracks) }) {
-                            Icon(Icons.Default.Shuffle, null); Text(" Aleatoire")
-                        }
-                        OutlinedButton(onClick = {
+                        IconButton(onClick = {
                             if (tracks.isNotEmpty()) { vm.play(tracks, 0); vm.controller.setRepeatAll() }
                         }) {
-                            Icon(Icons.Default.Repeat, null); Text(" Repeat all")
+                            Icon(Icons.Default.Repeat, "Repeat all", modifier = Modifier.size(24.dp))
+                        }
+                        Spacer(Modifier.weight(1f))
+                        Button(
+                            onClick = { if (tracks.isNotEmpty()) vm.play(tracks, 0) },
+                            enabled = tracks.isNotEmpty(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Icon(Icons.Default.PlayArrow, null, modifier = Modifier.height(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Tout lire")
                         }
                     }
                     Spacer(Modifier.height(8.dp))

@@ -3,7 +3,20 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Note de musique (croche) noire, sans fond. Hampe verticale + tete ovale
+         + crochet, centree dans la zone de securite de l'icone adaptive
+         (les 72dp centraux, soit 18..90 sur les deux axes). -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M64,34 L64,62.5 C61.9,61.6 59.5,61 57,61 C49.3,61 43,65.5 43,71 C43,76.5 49.3,81 57,81 C64.7,81 71,76.5 71,71 L71,44 L78,44 L78,34 Z" />
+        android:fillColor="#000000"
+        android:pathData="
+            M62,26
+            L62,63.5
+            C59.3,62.1 56.2,61.3 53,61.3
+            C44.4,61.3 37.5,66.6 37.5,73.1
+            C37.5,79.6 44.4,84.9 53,84.9
+            C61.6,84.9 68.5,79.6 68.5,73.1
+            L68.5,40 L78,40
+            C78,40 78.6,33.5 73,29
+            C68.6,25.4 62,26 62,26
+            Z" />
 </vector>
