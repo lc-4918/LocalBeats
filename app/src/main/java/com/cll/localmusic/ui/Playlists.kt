@@ -32,11 +32,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,12 +49,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.cll.localmusic.data.AppSettings
 import com.cll.localmusic.toTrack
-import androidx.core.net.toUri
 
 @Composable
 fun PlaylistsScreen(vm: MusicViewModel, nav: NavController) {
@@ -70,15 +68,23 @@ fun PlaylistsScreen(vm: MusicViewModel, nav: NavController) {
         )
     }
 
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(onClick = { showCreate = true }) {
-                Icon(Icons.Default.Add, "Nouvelle playlist")
+    Box(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // TopAvatarBar occupe tout l'espace sauf le bouton +
+                Box(Modifier.weight(1f)) {
+                    TopAvatarBar("Playlists", nav)
+                }
+                IconButton(
+                    onClick = { showCreate = true },
+                    modifier = Modifier.padding(end = 4.dp)
+                ) {
+                    Icon(Icons.Default.Add, "Nouvelle playlist")
+                }
             }
-        }
-    ) { pad ->
-        Column(Modifier.fillMaxSize().padding(pad)) {
-            TopAvatarBar("Playlists", nav)
             if (playlists.isEmpty()) {
                 Text(
                     "Aucune playlist. Touche + pour en creer une.",
@@ -229,17 +235,29 @@ fun PlaylistDetailScreen(vm: MusicViewModel, nav: NavController, playlistId: Lon
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        IconButton(onClick = { vm.playShuffled(tracks) }) {
+                        IconButton(onClick = {
+                            vm.playShuffled(tracks)
+                            nav.navigate("player")
+                        }) {
                             Icon(Icons.Default.Shuffle, "Lecture aleatoire", modifier = Modifier.size(24.dp))
                         }
                         IconButton(onClick = {
-                            if (tracks.isNotEmpty()) { vm.play(tracks, 0); vm.controller.setRepeatAll() }
+                            if (tracks.isNotEmpty()) {
+                                vm.play(tracks, 0)
+                                vm.controller.setRepeatAll()
+                                nav.navigate("player")
+                            }
                         }) {
                             Icon(Icons.Default.Repeat, "Repeat all", modifier = Modifier.size(24.dp))
                         }
                         Spacer(Modifier.weight(1f))
                         Button(
-                            onClick = { if (tracks.isNotEmpty()) vm.play(tracks, 0) },
+                            onClick = {
+                                if (tracks.isNotEmpty()) {
+                                    vm.play(tracks, 0)
+                                    nav.navigate("player")
+                                }
+                            },
                             enabled = tracks.isNotEmpty(),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary,

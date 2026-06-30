@@ -162,7 +162,10 @@ fun FoldersScreen(vm: MusicViewModel, nav: NavController) {
                     modifier = Modifier.weight(1f).padding(end = 8.dp)
                 )
                 Button(
-                    onClick = { vm.play(folder.tracks) },
+                    onClick = {
+                        vm.play(folder.tracks)
+                        nav.navigate("player")
+                    },
                     enabled = folder.tracks.isNotEmpty(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,

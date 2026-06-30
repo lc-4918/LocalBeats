@@ -88,8 +88,8 @@ fun TrackList(
                 onLongClick = { if (!selected.containsKey(key)) selected[key] = track },
                 menuItems = buildList {
                     add("Lire" to { onPlayIndex(index) })
-                    add("Ajouter a la file d'attente" to { vm.addToQueue(listOf(track)) })
-                    add("Ajouter a une playlist" to { dialogTracks = listOf(track) })
+                    add("Ajouter à la file d'attente" to { vm.addToQueue(listOf(track)) })
+                    add("Ajouter à une playlist" to { dialogTracks = listOf(track) })
                     if (allowRemove) add("Retirer de la playlist" to { onRemoveSelected(listOf(track)) })
                 }
             )

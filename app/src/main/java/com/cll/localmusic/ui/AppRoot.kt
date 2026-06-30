@@ -1,15 +1,20 @@
 package com.cll.localmusic.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Folder
@@ -24,15 +29,16 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -41,6 +47,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 
 private sealed class Tab(val route: String, val label: String, val icon: ImageVector) {
     data object Home : Tab("home", "Accueil", Icons.Default.Home)
@@ -58,20 +65,14 @@ fun MusicAppRoot(vm: MusicViewModel) {
     val route = backStack?.destination?.route
     val showChrome = route in tabs.map { it.route } || route?.startsWith("playlist/") == true
 
-    Scaffold(
-        bottomBar = {
-            if (showChrome) {
-                Column {
-                    MiniPlayer(vm, onOpen = { nav.navigate("player") })
-                    BottomBar(nav, route)
-                }
-            }
-        }
-    ) { padding ->
+    // statusBarsPadding() sur le Box : le contenu s'arrete sous la barre de statut
+    // (heure, batterie...) comme avec le Scaffold, mais le bas reste plein ecran
+    // pour que le scroll passe sous la NavigationBar transparente.
+    Box(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
         NavHost(
             navController = nav,
             startDestination = Tab.Home.route,
-            modifier = Modifier.padding(padding)
+            modifier = Modifier.fillMaxSize()
         ) {
             composable(Tab.Home.route) { HomeScreen(vm, nav) }
             composable(Tab.Folders.route) { FoldersScreen(vm, nav) }
@@ -84,12 +85,26 @@ fun MusicAppRoot(vm: MusicViewModel) {
             composable("player") { PlayerScreen(vm, nav) }
             composable("settings") { SettingsScreen(vm, nav) }
         }
+
+        // La barre chrome (MiniPlayer opaque + BottomBar transparente) est
+        // posee en overlay en bas, par-dessus le NavHost.
+        if (showChrome) {
+            Column(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
+                MiniPlayer(vm, onOpen = { nav.navigate("player") })
+                BottomBar(nav, route)
+            }
+        }
     }
 }
 
 @Composable
 private fun BottomBar(nav: NavController, currentRoute: String?) {
-    NavigationBar {
+    // containerColor avec alpha 2/3 (~0.67) : la barre est semi-transparente,
+    // le contenu scrolle visuellement derriere elle.
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.77f),
+        modifier = Modifier.navigationBarsPadding()
+    ) {
         tabs.forEach { tab ->
             NavigationBarItem(
                 selected = currentRoute == tab.route,
@@ -141,6 +156,13 @@ fun TopAvatarBar(title: String, nav: NavController) {
 private fun MiniPlayer(vm: MusicViewModel, onOpen: () -> Unit) {
     val st = vm.controller.state
     if (!st.hasItem) return
+
+    // Pochette resolue de facon asynchrone depuis le folderPath de la piste en cours.
+    // Meme pattern que PlayerScreen : produceState se relance a chaque changement de piste.
+    val cover by produceState<android.net.Uri?>(initialValue = null, st.folderPath) {
+        value = vm.coverFor(st.folderPath)
+    }
+
     Surface(
         color = MaterialTheme.colorScheme.surfaceVariant,
         modifier = Modifier.fillMaxWidth()
@@ -150,8 +172,25 @@ private fun MiniPlayer(vm: MusicViewModel, onOpen: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onOpen() }
-                .padding(horizontal = 12.dp, vertical = 6.dp)
+                .padding(horizontal = 8.dp, vertical = 6.dp)
         ) {
+            // Pochette : carree 48dp, coins arrondis, fond neutre si pas encore chargee.
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+            ) {
+                if (cover != null) {
+                    AsyncImage(
+                        model = cover,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
+            Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(
                     st.title.ifBlank { "Lecture" },
